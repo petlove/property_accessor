@@ -11,8 +11,8 @@ RSpec.describe PropertyAccessor do
         Person.new("John Doe"),
         "Foomart",
         [
-          Book.new("Nigel Rees", nil, 9, {year: 1996}, %w[asdf asdf2]),
-          Book.new("Evelyn Waugh", "Sword of Honour", 13, {year: 1997}, %w[foo bar])
+          Book.new("Nigel Rees", "Sayings of the Century", nil, 9, {year: 1996}, %w[asdf asdf2]),
+          Book.new("Evelyn Waugh", "Sword of Honour", nil, 13, {year: 1997}, %w[foo bar])
         ]
       )
     end
@@ -97,13 +97,13 @@ RSpec.describe PropertyAccessor do
 
     test "raises if a property referenced in a nested path returns nil and :raise_on_nilable_property is true or unset" do
       expect do
-        getter.get_value(obj, "books[0].title.upcase")
-      end.to raise_error(/unexpected nil value for property referenced in property path `title'/)
+        getter.get_value(obj, "books[0].category.upcase")
+      end.to raise_error(/unexpected nil value for property `category'/)
     end
 
     test "does not raise if a property referenced in a nested path returns nil and :raise_on_nilable_property is false" do
       expect do
-        expect(getter.get_value(obj, "books[0].title.upcase", raise_on_nilable_property: false)).to be_nil
+        expect(getter.get_value(obj, "books[0].category.upcase", raise_on_nilable_property: false)).to be_nil
       end.not_to raise_error
     end
   end

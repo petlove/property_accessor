@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 Person = Struct.new(:name)
-Book = Struct.new(:author, :title, :price, :written, :tags)
+Book = Struct.new(:author, :title, :category, :price, :written, :tags)
 
 Store = Struct.new(:owner, :name, :books) do
   def book(title)

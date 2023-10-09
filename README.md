@@ -23,7 +23,7 @@ First, let's create some objects:
 require 'property_acessor'
 
 Person = Struct.new(:name)
-Book = Struct.new(:author, :title, :price, :written, :tags)
+Book = Struct.new(:author, :title, :category, :price, :written, :tags)
 
 Store = Struct.new(:owner, :name, :books) do
   def book(title)
@@ -35,8 +35,8 @@ store = Store.new(
   Person.new("John Doe"),
   "Foomart",
   [
-    Book.new("Nigel Rees", nil, 9, {year: 1996}, %w[asdf asdf2]),
-    Book.new("Evelyn Waugh", "Sword of Honour", 13, {year: 1997}, %w[foo bar])
+    Book.new("Nigel Rees", "Sayings of the Century", nil, 9, {year: 1996}, %w[asdf asdf2]),
+    Book.new("Evelyn Waugh", "Sword of Honour", "fiction", 13, {year: 1997}, %w[foo bar])
   ]
 )
 ```
@@ -145,14 +145,14 @@ PropertyAccessor.get_value({"foo bar" => "baz"}, "(foo bar)")
 
 ### Other available options
 
-By default, PropertyAccessor raises an error when a reference to a property in a nested path returns `nil` (except for the last one). This can be changed using the `:raise_on_nilable_property` option:
+By default, PropertyAccessor will raise an error when a nilable property referenced in a nested path returns `nil` (except for the last one). This can be changed using the `:raise_on_nilable_property` option:
 
 ```ruby
 # Raises an error of type NilValueInNestedPathError
-PropertyAccessor.new("books[2].title").get_value(store)
+PropertyAccessor.new("books[0].category.upcase").get_value(store)
 
 # Works fine (nil is returned)
-PropertyAccessor.new("books[2].title", raise_on_nilable_property: false).get_value(store)
+PropertyAccessor.new("books[0].category.upcase", raise_on_nilable_property: false).get_value(store)
 ```
 
 ## Contributing

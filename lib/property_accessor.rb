@@ -27,18 +27,18 @@ class PropertyAccessor
       nested_object =
         case p.kind
         when :simple
-          get_property(object, p.property)
+          get_property(object, p.name)
         when :indexed
-          get_indexed_property(object, p.property, p.opts[:index])
+          get_indexed_property(object, p.name, p.opts[:index])
         else
-          get_mapped_property(object, p.property, p.opts[:key])
+          get_mapped_property(object, p.name, p.opts[:key])
         end
 
       if nested_object.nil?
         if @raise_on_nilable_property && i != @props.length - 1
           raise(
             NilValueInNestedPathError,
-            "unexpected nil value for property referenced in property path `#{p.to_path}' -- #{object.inspect}"
+            "unexpected nil value for property `#{p}' -- #{object.inspect}"
           )
         else
           return nil

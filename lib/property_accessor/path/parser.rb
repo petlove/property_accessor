@@ -5,13 +5,13 @@ require "strscan"
 class PropertyAccessor
   module Path
     class Parser
-      Property = Struct.new(:property, :kind, :opts) do
-        def to_path
+      Property = Struct.new(:name, :kind, :opts) do
+        def to_s
           # :nocov:
-          return "#{property}[#{opts[:index]}]" if kind == :indexed
-          return "#{property}(#{opts[:key]})" if kind == :mapped
+          return "#{name}[#{opts[:index]}]" if kind == :indexed
+          return "#{name}(#{opts[:key]})" if kind == :mapped
 
-          property
+          name
           # :nocov:
         end
       end

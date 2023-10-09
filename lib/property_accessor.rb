@@ -15,7 +15,7 @@ class PropertyAccessor
     raise ArgumentError, "path is required" if path.nil? || path.empty?
 
     @path = path
-    @raise_on_nilable_property = opts.fetch(:raise_on_nilable_property, true)
+    @nil_tolerant = opts.fetch(:nil_tolerant, false)
 
     @props = Path.parse(path).properties
   end
@@ -35,7 +35,7 @@ class PropertyAccessor
         end
 
       if nested_object.nil?
-        if @raise_on_nilable_property && i != @props.length - 1
+        if !@nil_tolerant && i != @props.length - 1
           raise(
             NilValueInNestedPathError,
             "unexpected nil value for property `#{p}' -- #{object.inspect}"

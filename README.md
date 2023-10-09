@@ -145,14 +145,14 @@ PropertyAccessor.get_value({"foo bar" => "baz"}, "(foo bar)")
 
 ### Other available options
 
-By default, PropertyAccessor will raise an error when a nilable property referenced in a nested path returns `nil` (except for the last one). This can be changed using the `:raise_on_nilable_property` option:
+By default, PropertyAccessor will raise an error when a nilable property referenced in a nested path returns `nil` (except for the last one). This can be changed using the `:nil_tolerant` option:
 
 ```ruby
 # Raises an error of type NilValueInNestedPathError
 PropertyAccessor.new("books[0].category.upcase").get_value(store)
 
 # Works fine (nil is returned)
-PropertyAccessor.new("books[0].category.upcase", raise_on_nilable_property: false).get_value(store)
+PropertyAccessor.new("books[0].category.upcase", nil_tolerant: true).get_value(store)
 ```
 
 ## Contributing

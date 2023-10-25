@@ -31,7 +31,7 @@ class PropertyAccessor
 
       def initialize(path)
         raise ArgumentError, "path is required" if path.nil? || path.empty?
-        raise ArgumentError, "path must not end with a dot" if path.end_with?(DOT)
+        raise ArgumentError, "path should not start nor end with a dot" if path[0] == DOT || path[-1] == DOT
 
         @path = path.strip
         # Hack to make parsing a bit easier :)

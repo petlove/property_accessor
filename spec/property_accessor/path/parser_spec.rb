@@ -48,13 +48,19 @@ RSpec.describe PropertyAccessor::Path::Parser do
       end.to raise_error(ArgumentError, "path is required")
     end
 
-    test "path with ending dot" do
+    test "path with a starting dot" do
       expect do
-        described_class.new("foo.").parse
-      end.to raise_error(ArgumentError, "path must not end with a dot")
+        described_class.new(".foo").parse
+      end.to raise_error(ArgumentError, "path should not start nor end with a dot")
     end
 
-    test "invalid character" do
+    test "path with a ending dot" do
+      expect do
+        described_class.new("foo.").parse
+      end.to raise_error(ArgumentError, "path should not start nor end with a dot")
+    end
+
+    test "path with invalid character" do
       expect do
         described_class.new("foo.bar$(baz)").parse
       end.to raise_error(/unexpected token `\$'/)

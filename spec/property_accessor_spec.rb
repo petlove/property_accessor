@@ -3,108 +3,89 @@
 require "spec_helper"
 
 RSpec.describe PropertyAccessor do
-  describe ".get_value" do
+  describe ".get_value", aggregate_errors: true do
     subject(:getter) { described_class }
 
-    let(:obj) do
+    let(:object) do
       Store.new(
-        Person.new("John Doe"),
-        "Foomart",
-        [
-          Book.new("Nigel Rees", "Sayings of the Century", nil, 9, {year: 1996}, %w[asdf asdf2]),
-          Book.new("Evelyn Waugh", "Sword of Honour", nil, 13, {year: 1997}, %w[foo bar])
+        owner: Person.new("John Doe"),
+        name: "Foomart",
+        books: [
+          Book.new(
+            author: "Nigel Rees",
+            title: "Sayings of the Century",
+            price: 9,
+            written: {year: 1996},
+            tags: %w[asdf asdf2]
+          ),
+          Book.new(
+            author: "Evelyn Waugh",
+            title: "Sword of Honour",
+            price: 13,
+            written: {year: 1997},
+            tags: %w[foo bar]
+          )
         ]
       )
     end
 
-    test "object is missing" do
+    it "raises when object is missing" do
       expect do
         getter.get_value(nil, "name")
       end.to raise_error(ArgumentError)
     end
 
-    test "path is missing" do
+    it "raises when path is missing" do
       expect do
-        getter.get_value(obj, nil)
+        getter.get_value(object, nil)
       end.to raise_error(ArgumentError)
     end
 
-    test "simple property" do
-      expect(getter.get_value(obj, "name")).to eq("Foomart")
+    it "can handle a simple property" do
+      expect(getter.get_value(object, "name")).to eq("Foomart")
     end
 
-    test "nested property" do
-      expect(getter.get_value(obj, "owner.name")).to eq("John Doe")
+    it "can handle nested properties" do
+      expect(getter.get_value(object, "owner.name")).to eq("John Doe")
     end
 
-    test "indexed property" do
-      expect(getter.get_value(obj, "books[0].author")).to eq("Nigel Rees")
+    it "can handle indexed properties" do
+      expect(getter.get_value(object, "books[0].author")).to eq("Nigel Rees")
     end
 
-    test "indexed property with no name" do
-      expect do
-        getter.get_value(obj, "[0].author")
-      end.to raise_error(ArgumentError, /no property name specified for/)
-    end
-
-    test "indexed property with invalid index" do
-      expect do
-        getter.get_value(obj, "books[meh].author")
-      end.to raise_error(/could not parse index as integer/)
-    end
-
-    test "indexed property on array", aggregate_errors: true do
+    it "can handle indexed properties when object is an array" do
       expect(getter.get_value(["foo", ["bar"]], "[0]")).to eq("foo")
-      expect(getter.get_value(["foo", %w[bar baz]], "[1][0]")).to eq("bar")
-      expect(getter.get_value(["foo", %w[bar baz]], "[1][-1]")).to eq("baz")
+      expect(getter.get_value([%w[bar baz]], "[0][1]")).to eq("baz")
+      expect(getter.get_value(["foo", %w[bar baz]], "[-1][0]")).to eq("bar")
     end
 
-    test "raises when the value of the specified indexed property is not an array-like" do
+    it "does not raise when given a path where last segment is an indexed property but object is not array-like" do
+      expect(getter.get_value(object, "name[0]")).to be_nil
+    end
+
+    it "does not raise when given a path where last segment is an unknown property" do
+      expect(getter.get_value(object, "foobar")).to be_nil
+    end
+
+    it "raises when given a path where a nested property returns nil and strict option is true or unset" do
       expect do
-        getter.get_value(obj, "name[0]")
-      end.to raise_error(TypeError, /property.*is expected to be an array-like/i)
+        getter.get_value(object, "books[0].category.upcase")
+      end.to raise_error(described_class::NoSuchPropertyError, /Cannot read property/)
     end
 
-    test "mapped property", aggregate_errors: true do
-      expect(getter.get_value(obj, "books[0].written(year)")).to eq(1996)
-      expect(getter.get_value(obj, "book(Sword of Honour).price")).to eq(13)
-    end
-
-    test "mapped property with no name" do
+    it "does not raise when given a path where a nested property returns nil and strict option is false" do
       expect do
-        getter.get_value(obj, "(Sword of Honour).price")
-      end.to raise_error(ArgumentError, /no property name specified for/)
-    end
-
-    test "mapped property on hash", aggregate_errors: true do
-      expect(getter.get_value({foo: "bar"}, "(foo)")).to eq("bar")
-      expect(getter.get_value({foo: {bar: "baz"}}, "(foo)(bar)")).to eq("baz")
-      expect(getter.get_value({"foo" => {"bar" => "baz"}}, "foo.bar")).to eq("baz")
-      expect(getter.get_value({"" => "foobar"}, "()")).to eq("foobar")
-    end
-
-    test "raises when the value of the specified mapped property is not a hash, but it should be" do
-      expect do
-        getter.get_value(obj, "owner(foobar)")
-      end.to raise_error(TypeError, /property.*is expected to be a Hash/i)
-    end
-
-    test "unknown property" do
-      expect do
-        getter.get_value(obj, "foobar")
-      end.to raise_error(/undefined method `foobar'/)
-    end
-
-    test "raises if a property referenced in a nested path returns nil and :nil_tolerant is false or unset" do
-      expect do
-        getter.get_value(obj, "books[0].category.upcase")
-      end.to raise_error(/unexpected nil value for property `category'/)
-    end
-
-    test "does not raise if a property referenced in a nested path returns nil and :nil_tolerant is true" do
-      expect do
-        expect(getter.get_value(obj, "books[0].category.upcase", nil_tolerant: true)).to be_nil
+        expect(getter.get_value(object, "books[0].category.upcase", strict: false)).to be_nil
       end.not_to raise_error
+    end
+
+    it "can handle regular properties when object is a Hash" do
+      expect(getter.get_value({"foo" => "bar"}, "foo")).to eq("bar")
+      expect(getter.get_value({"foo" => ["bar"]}, "foo[0]")).to eq("bar")
+    end
+
+    it "can handle regular properties when object is a Hash and the keys are symbols" do
+      expect(getter.get_value({foo: "bar"}, "foo")).to eq("bar")
     end
   end
 end

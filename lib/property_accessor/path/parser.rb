@@ -5,27 +5,23 @@ require "strscan"
 class PropertyAccessor
   module Path
     class Parser
-      Property = Struct.new(:name, :kind, :opts) do
+      Component = Struct.new(:key, :kind) do
         def to_s
-          # :nocov:
-          return "#{name}[#{opts[:index]}]" if kind == :indexed
-          return "#{name}(#{opts[:key]})" if kind == :mapped
+          if kind == :index
+            return "[#{key}]"
+          end
 
-          name
-          # :nocov:
+          key
         end
       end
 
-      ParsedPath = Struct.new(:properties)
+      ParsedPath = Struct.new(:components)
 
-      class InvalidPath < StandardError; end
+      class ParserError < StandardError; end
 
-      NAME = /[a-zA-Z][a-zA-Z0-9?!_]*/
-      INT = /-?(?:0|[1-9][0-9]*)/
-      KEY = /[^)]*/
+      NAME_RE = /[a-zA-Z][a-zA-Z0-9?!_]*/
+      INTEGER_RE = /-?(?:0|[1-9][0-9]*)/
       DOT = "."
-      LPAREN = "("
-      RPAREN = ")"
       LBRACKET = "["
       RBRACKET = "]"
 
@@ -34,73 +30,46 @@ class PropertyAccessor
         raise ArgumentError, "path should not start nor end with a dot" if path[0] == DOT || path[-1] == DOT
 
         @path = path.strip
-        # Hack to make parsing a bit easier :)
-        @path = ".#{@path}" unless path[0] == LPAREN || path[0] == LBRACKET
+        # Hack to make parsing a bit easier.
+        @path = ".#{@path}" unless path[0] == LBRACKET
         @ss = StringScanner.new(@path)
       end
 
       def parse
-        list = []
+        components = []
 
         until @ss.eos?
-          if @ss.skip(DOT)
-            name = parse_name
-            # Check if current property is indexed (e.g. foo[0]).
-            if @ss.scan(LBRACKET)
-              list << Property.new(name, :indexed, {index: parse_index})
-              next
-            end
+          if @ss.scan(DOT)
+            name = @ss.scan(NAME_RE)
+            raise ParserError, "expected name at position #{real_position}" unless name
 
-            # Check if current property is mapped (e.g. foo(bar))
-            if @ss.scan(LPAREN)
-              list << Property.new(name, :mapped, {key: parse_key})
-              next
-            end
-
-            list << Property.new(name, :simple, {})
+            components << Component.new(name, :property)
           elsif @ss.scan(LBRACKET)
-            list << Property.new(nil, :indexed, {index: parse_index})
-          elsif @ss.scan(LPAREN)
-            list << Property.new(nil, :mapped, {key: parse_key})
+            index = consume_index
+            raise ParserError, "missing `#{RBRACKET}' at position #{real_position}" unless @ss.skip(RBRACKET)
+
+            components << Component.new(index, :index)
           else
-            raise InvalidPath, "unexpected token `#{@ss.peek(1)}' (#{@ss.rest})"
+            raise ParserError, "unexpected token `#{@ss.peek(1)}' (#{@ss.rest})"
           end
         end
 
-        ParsedPath.new(list)
+        ParsedPath.new(components)
       end
 
       private
 
-      def parse_name
-        val = @ss.scan(NAME)
-        raise InvalidPath, "expected name at position #{actual_position}" unless val
-
-        val
-      end
-
-      def parse_index
-        if (val = @ss.scan(INT))
-          val = Integer(val)
-        else
-          @ss.pos -= 1
-          raise TypeError, "could not parse index as integer (#{@ss.rest})"
+      def consume_index
+        if (v = @ss.scan(INTEGER_RE))
+          value = Integer(v)
+          return value
         end
 
-        raise InvalidPath, "missing `#{RBRACKET}' at position #{actual_position}" unless @ss.skip(RBRACKET)
-
-        val
+        @ss.pos -= 1
+        raise ParserError, "could not parse index as integer (#{@ss.rest})"
       end
 
-      def parse_key
-        val = @ss.scan(KEY)
-
-        raise InvalidPath, "missing `#{RPAREN}' at position #{actual_position}" unless @ss.skip(RPAREN)
-
-        val
-      end
-
-      def actual_position
+      def real_position
         (@path[0] == DOT) ? @ss.pos - 1 : @ss.pos
       end
     end

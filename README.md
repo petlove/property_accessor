@@ -69,9 +69,12 @@ getter.get_value({name: "Foomart"})
 # => "Foomart"
 
 # Indifferent access is supported by default
-getter.get_value("name" => "Foomart"})
+getter.get_value({"name" => "Foomart"})
 # => "Foomart"
 ```
+
+> [!NOTE]
+> You can also use this same syntax to access values from hash-like objects (those that implement the `to_hash` method).
 
 **Nested** (`name1.name2.name3`)
 
@@ -113,7 +116,7 @@ getter.get_value([%w[foo bar baz]])
 # => "baz"
 ```
 
-**Combined** (`name1.name2[index].name3.key[0][1]`)
+**Combined** (`name1.name2[index].name3.name4[0][1]`)
 
 Combining nested, and indexed properties is also supported. But I guess you have already figured that out :)
 

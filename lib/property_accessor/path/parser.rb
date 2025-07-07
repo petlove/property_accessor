@@ -19,7 +19,7 @@ class PropertyAccessor
 
       class ParserError < StandardError; end
 
-      NAME_RE = /[a-zA-Z][a-zA-Z0-9?!_]*/
+      NAME_RE = /[a-zA-Z_][a-zA-Z0-9?!_]*/
       INTEGER_RE = /(?:0|-?[1-9][0-9]*)/
       DOT = "."
       LBRACKET = "["

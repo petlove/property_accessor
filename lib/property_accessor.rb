@@ -40,7 +40,7 @@ class PropertyAccessor
 
       if val.nil?
         if @strict && idx + 1 < @path_components.length
-          raise NoSuchPropertyError, "Cannot read #{component.kind} `#{component}' while traversing path `#{@path}'"
+          raise NoSuchPropertyError, "Cannot access property or array index `#{component}' while traversing path `#{@path}'"
         end
 
         return nil

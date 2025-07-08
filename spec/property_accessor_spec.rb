@@ -70,7 +70,7 @@ RSpec.describe PropertyAccessor do
     it "raises when given a path where a nested property returns nil and strict option is true or unset" do
       expect do
         getter.get_value(object, "books[0].category.upcase")
-      end.to raise_error(described_class::NoSuchPropertyError, /Cannot read property/)
+      end.to raise_error(described_class::NoSuchPropertyError, /Cannot access property or array index/)
     end
 
     it "does not raise when given a path where a nested property returns nil and strict option is false" do

@@ -22,23 +22,23 @@ class PropertyAccessor
   def get_value(object)
     raise ArgumentError, "object is required" if object.nil?
 
-    @path_components.each_with_index.reduce(object) do |val, (component, idx)|
-      val =
+    @path_components.each_with_index.reduce(object) do |value, (component, idx)|
+      value =
         case component.kind
         when :property
           property = component.key
 
-          if val.respond_to?(:to_hash)
-            val = val.to_hash
-            val[property] || val[property.to_sym]
-          elsif val.respond_to?(property)
-            val.public_send(property)
+          if value.respond_to?(:to_hash)
+            hash = value.to_hash
+            hash[property] || hash[property.to_sym]
+          elsif value.respond_to?(property)
+            value.public_send(property)
           end
         when :index
-          val.to_ary[component.key] if val.respond_to?(:to_ary)
+          value.to_ary[component.key] if value.respond_to?(:to_ary)
         end
 
-      if val.nil?
+      if value.nil?
         if @strict && idx + 1 < @path_components.length
           raise NoSuchPropertyError, "Cannot access property or array index `#{component}' while traversing path `#{@path}'"
         end
@@ -46,7 +46,7 @@ class PropertyAccessor
         return nil
       end
 
-      val
+      value
     end
   end
 end
